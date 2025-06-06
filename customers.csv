@@ -1,0 +1,11 @@
+customer_id,name,email,signup_date
+1,Customer 1,customer1@example.com,2023-01-31
+2,Customer 2,customer2@example.com,2023-02-28
+3,Customer 3,,2023-03-31
+4,Customer 4,customer4@example.com,2023-04-30
+5,Customer 5,customer5@example.com,2023-05-31
+6,Customer 6,,2023-06-30
+7,Customer 7,customer7@example.com,2023-07-31
+8,Customer 8,customer8@example.com,2023-08-31
+9,Customer 9,,2023-09-30
+10,Customer 10,customer10@example.com,2023-10-31

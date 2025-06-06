@@ -1,0 +1,94 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the datasets
+try:
+    orders_df = pd.read_csv('orders.csv')
+    customers_df = pd.read_csv('customers.csv')
+    products_df = pd.read_csv('products.csv')
+    order_items_df = pd.read_csv('order_items.csv')
+except FileNotFoundError as e:
+    print(f"Error loading file: {e}. Please ensure all CSV files are in the same directory.")
+    exit()
+
+# Convert 'order_date' to datetime objects in orders_df
+orders_df['order_date'] = pd.to_datetime(orders_df['order_date'])
+
+# --- Perform analysis based on SQL queries ---
+
+# 1. Total revenue
+total_revenue = orders_df['revenue'].sum()
+print(f"Total Revenue: ${total_revenue:,.2f}\n")
+
+# 2. Average order revenue
+avg_revenue = orders_df['revenue'].mean()
+print(f"Average Order Revenue: ${avg_revenue:,.2f}\n")
+
+# 3. Total orders per customer
+total_orders_per_customer = orders_df.groupby('customer_id')['order_id'].count().reset_index()
+total_orders_per_customer.rename(columns={'order_id': 'total_orders'}, inplace=True)
+total_orders_per_customer = total_orders_per_customer.sort_values(by='total_orders', ascending=False)
+print("Total Orders Per Customer:\n", total_orders_per_customer.head(), "\n")
+
+# 4. Join orders and customers (for analysis purposes, not directly visualized here)
+orders_customers_df = pd.merge(orders_df, customers_df, on='customer_id', how='inner')
+
+# 5. Top 5 customers by revenue
+customer_revenue = orders_customers_df.groupby('name')['revenue'].sum().reset_index()
+customer_revenue.rename(columns={'revenue': 'total_spent'}, inplace=True)
+top_5_customers = customer_revenue.sort_values(by='total_spent', ascending=False).head(5)
+print("Top 5 Customers by Revenue:\n", top_5_customers, "\n")
+
+# 6. Revenue per product category
+# Merge order_items with products to get product categories
+order_items_products_df = pd.merge(order_items_df, products_df, on='product_id', how='inner')
+order_items_products_df['line_item_revenue'] = order_items_products_df['quantity'] * order_items_products_df['price_x'] # Using price_x from products_df
+
+category_revenue = order_items_products_df.groupby('category')['line_item_revenue'].sum().reset_index()
+category_revenue.rename(columns={'line_item_revenue': 'category_revenue'}, inplace=True)
+category_revenue = category_revenue.sort_values(by='category_revenue', ascending=False)
+print("Revenue Per Product Category:\n", category_revenue, "\n")
+
+# 7. Monthly revenue
+orders_df['month'] = orders_df['order_date'].dt.to_period('M')
+monthly_revenue = orders_df.groupby('month')['revenue'].sum().reset_index()
+monthly_revenue['month'] = monthly_revenue['month'].astype(str) # Convert Period to string for plotting
+print("Monthly Revenue:\n", monthly_revenue.head(), "\n")
+
+# 8. Handling nulls (identifying customers with null emails)
+customers_with_null_email = customers_df[customers_df['email'].isnull()]
+print("Customers with Null Email:\n", customers_with_null_email, "\n")
+
+# --- Generate Visualizations ---
+
+# Visualization 1: Top 5 Customers by Revenue (Bar Chart)
+plt.figure(figsize=(10, 6))
+sns.barplot(x='name', y='total_spent', data=top_5_customers, palette='viridis')
+plt.title('Top 5 Customers by Total Revenue')
+plt.xlabel('Customer Name')
+plt.ylabel('Total Revenue ($)')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# Visualization 2: Revenue Per Product Category (Bar Chart)
+plt.figure(figsize=(10, 6))
+sns.barplot(x='category', y='category_revenue', data=category_revenue, palette='magma')
+plt.title('Revenue Per Product Category')
+plt.xlabel('Product Category')
+plt.ylabel('Total Revenue ($)')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# Visualization 3: Monthly Revenue Trends (Line Chart)
+plt.figure(figsize=(12, 6))
+sns.lineplot(x='month', y='revenue', data=monthly_revenue, marker='o', color='skyblue')
+plt.title('Monthly Revenue Trends')
+plt.xlabel('Month')
+plt.ylabel('Total Revenue ($)')
+plt.xticks(rotation=45, ha='right')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
